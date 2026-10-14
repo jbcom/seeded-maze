@@ -80,7 +80,9 @@ interface ModulePlacement { x: number; y: number; module: MazeModule }
 ```
 
 Supply exactly one module per macro cell. Every module has the same positive, safe-integer
-rectangular footprint. `cells[y][x]` is either a traversable tile with four wall booleans or `null`
+rectangular footprint. The expanded rectangle is bounded by exported `MAX_COMPOSED_CELLS` (1,000,000
+entries, including solid tiles), with a safe-integer area check before output allocation. `cells[y][x]`
+is either a traversable tile with four wall booleans or `null`
 for solid space. All local walls must be reciprocal, every module boundary initially sealed, and
 all traversable tiles within each module connected. A port names a candidate boundary tile:
 `offset` is local x on north/south and local y on east/west. It must land on a traversable tile.

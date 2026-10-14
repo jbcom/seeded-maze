@@ -53,6 +53,7 @@ function exercise(api) {
     assert.equal(typeof api[name], 'function', `export ${name} is missing`);
   }
   assert.equal(typeof api.DEFAULT_CONFIG, 'object', 'export DEFAULT_CONFIG is missing');
+  assert.equal(api.MAX_COMPOSED_CELLS, 1_000_000, 'composition allocation limit is missing');
 
   const layout = api.generateMaze(9, 9, 'package-check');
   assert.deepEqual(

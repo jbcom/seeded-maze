@@ -16,6 +16,8 @@ ports begin sealed and open only for a requested macro connection or perimeter e
 sets must align by offset and type. Validate local connectivity before stamping and final tile
 connectivity after stitching, so even external cycles cannot conceal a disconnected authored module.
 Canonical ordering and copied outputs keep composition deterministic and input-independent.
+Validate dimensions and row shape before deep tile scanning, and bound the full expanded rectangle
+by exported `MAX_COMPOSED_CELLS` (1,000,000 entries, including solids) before allocating output.
 
 **Limits.** No module-selection solver, rotations, variable footprints, layered progression rules,
 curved rendering or content catalog. Consumers select modules and interpret anchors themselves.

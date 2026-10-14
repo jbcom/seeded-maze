@@ -45,6 +45,9 @@ index ─────────> re-exports all five
    row-major placements and canonical anchor/port/join order remove input iteration order effects.
    No random draws are added to existing generation contracts. Module, port and anchor provenance
    remains scoped to each macro placement, so repeated authored descriptors remain distinguishable.
+8. **Allocation is bounded before deep validation.** The first descriptor's dimensions and rectangular
+   row shape are checked before the expanded safe-integer area. `MAX_COMPOSED_CELLS` limits the entire
+   output footprint, including solid entries, to 1,000,000 cells before tile scanning or allocation.
 
 ## Generation
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   composeMazeModules,
+  MAX_COMPOSED_CELLS,
   type MazeModule,
   type ModuleCell,
   type ModulePlacement,
@@ -166,6 +167,7 @@ describe('authored module composition', () => {
     for (const seed of ['one', 'two', 'three']) {
       const layout = generateMaze(7, 5, seed);
       const result = composeMazeModules(layout, placements(layout));
+      expect(result.anchors.length).toBeGreaterThan(0);
       const queue = [result.anchors[0]];
       const seen = new Set<string>();
       for (let i = 0; i < queue.length; i++) {
@@ -270,6 +272,34 @@ describe('rectangular and cyclic compositions', () => {
 });
 
 describe('invalid composition rejection', () => {
+  it('bounds the full expanded rectangle before output allocation, including solid mask tiles', () => {
+    const cells = Array.from({ length: 201 }, () => Array<ModuleCell | null>(201).fill(null));
+    cells[0][0] = { walls: sealed() };
+    Object.defineProperty(cells[0][0], 'walls', {
+      get() {
+        throw new Error('deep scan before budget');
+      },
+    });
+    const module: MazeModule = {
+      id: 'sparse',
+      width: 201,
+      height: 201,
+      cells,
+      ports: [],
+      anchors: [],
+    };
+    const layout = macro(5, 5);
+    expect(201 * 201 * 25).toBeGreaterThan(MAX_COMPOSED_CELLS);
+    expect(() => composeMazeModules(layout, placements(layout, module))).toThrow(
+      `expanded grid exceeds ${MAX_COMPOSED_CELLS} cells`,
+    );
+  });
+  it('rejects enormous malformed footprints before attempting output allocation', () => {
+    const module = { ...cross(), height: Number.MAX_SAFE_INTEGER };
+    expect(() => composeMazeModules(macro(1), placements(macro(1), module))).toThrow(
+      'composeMazeModules: ragged grid',
+    );
+  });
   it('rejects sparse rows with a prefixed validation error', () => {
     const layout = macro(1);
     const module = cross();

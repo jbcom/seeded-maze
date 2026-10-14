@@ -1,6 +1,8 @@
 import type { MazeCell, MazeLayout } from './core.js';
 
 export type ModuleSide = 'north' | 'east' | 'south' | 'west';
+/** Allocation bound counts the full expanded rectangle, including solid mask tiles. */
+export const MAX_COMPOSED_CELLS = 1_000_000;
 export interface ModulePoint {
   x: number;
   y: number;
@@ -104,6 +106,15 @@ function orderedPorts(module: MazeModule): ModulePort[] {
   );
 }
 
+function validateGridShape(
+  cells: readonly (readonly (ModuleCell | null)[])[],
+  width: number,
+  height: number,
+): void {
+  requireValid(cells.length === height, 'ragged grid');
+  for (const row of cells) requireValid(Array.isArray(row) && row.length === width, 'ragged grid');
+}
+
 /** Validate wall symmetry, sealing and actual tile connectivity without trusting metadata. */
 function validateGrid(
   cells: readonly (readonly (ModuleCell | null)[])[],
@@ -111,11 +122,7 @@ function validateGrid(
   height: number,
   sealed: boolean,
 ): number {
-  requireValid(
-    cells.length === height &&
-      Array.from(cells).every((row) => Array.isArray(row) && row.length === width),
-    'ragged grid',
-  );
+  validateGridShape(cells, width, height);
   const queue: ModulePoint[] = [];
   let total = 0;
   for (let y = 0; y < height; y++) {
@@ -218,9 +225,16 @@ export function composeMazeModules(
   );
   const ordered = [...placements].sort((a, b) => a.y - b.y || a.x - b.x);
   const first = ordered[0].module;
+  requireValid(positive(first.width) && positive(first.height), 'invalid module dimensions');
+  validateGridShape(first.cells, first.width, first.height);
   const width = layout.width * first.width;
   const height = layout.height * first.height;
   requireValid(positive(width) && positive(height), 'invalid expanded dimensions');
+  requireValid(
+    Number.isSafeInteger(width * height) && width * height <= MAX_COMPOSED_CELLS,
+    `expanded grid exceeds ${MAX_COMPOSED_CELLS} cells`,
+  );
+  validateModule(first);
   const output: ComposedMaze = {
     width,
     height,
@@ -231,7 +245,7 @@ export function composeMazeModules(
     joins: [],
     reachableCells: 0,
   };
-  const validated = new Set<MazeModule>();
+  const validated = new Set<MazeModule>([first]);
   const portsByPlacement: ComposedPort[][] = [];
   ordered.forEach((placement, index) => {
     requireValid(
@@ -331,7 +345,9 @@ export function composeMazeModules(
       }
       for (const port of ports) {
         port.status = internal ? 'joined' : 'exit';
-        (output.cells[port.y][port.x] as ComposedCell).walls[side] = false;
+        const cell = output.cells[port.y][port.x];
+        requireValid(cell !== null, 'port on solid expanded mask');
+        cell.walls[side] = false;
       }
     }
   });
