@@ -8,7 +8,7 @@
     "check": "tsc --ignoreConfig --noEmit --strict --skipLibCheck --module esnext --moduleResolution bundler --target es2022 sourcey.config.ts && sourcey build"
   },
   "dependencies": {
-    "sourcey": "^3.6.9"
+    "sourcey": "^3.6.13"
   },
   "devDependencies": {
     "typescript": "7.0.2"
