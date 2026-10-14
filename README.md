@@ -16,6 +16,9 @@ types, no globals you have to reset, and the same seed always produces the same 
   entry across layers. `findDeadEnds` reports dead ends and how far each sits from the solution path.
 - **Curved-wall outlines.** `buildCurvedWalls` smooths and wobbles the wall lines into polylines,
   clamped so a curve can never open a walled boundary or seal an open passage.
+- **Authored module composition.** `composeMazeModules` expands a macro maze with explicitly chosen
+  rectangular tile modules, joins matching typed ports, preserves masks and anchors, and rejects
+  disconnected modules or expanded grids.
 
 ## Install
 
@@ -66,6 +69,7 @@ Runnable ESM and CommonJS examples are in [`examples/`](examples).
 | Geometry | `buildGeometry`, `getNodeConnections`, `gridToWorld`, `worldToGrid`, `DEFAULT_CONFIG`, `MazeConfig`, `MazeGeometry` |
 | Curved walls | `buildCurvedWalls`, `distanceToWall`, `minDistanceToWalls`, `maxDeviation`, `CurvedWall`, `Point2` |
 | Layers | `generateLayeredMaze`, `assertSolvable`, `findDeadEnds`, `LayeredMaze`, `SolvabilityReport`, `DeadEnd` |
+| Composition | `composeMazeModules`, `MazeModule`, `ModulePlacement`, `ComposedMaze`, `ModulePort`, `ModuleAnchor` |
 
 The full reference is in [`docs/API.md`](docs/API.md); the invariants behind it are in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

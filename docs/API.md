@@ -57,6 +57,90 @@ function getConnections(
 The cells one step away through an open wall. For an exit cell the list also includes the position
 just outside the maze. Returns an empty array for a coordinate outside the grid.
 
+## Authored module composition
+
+### `composeMazeModules(layout, placements)`
+
+```ts
+function composeMazeModules(layout: MazeLayout, placements: readonly ModulePlacement[]): ComposedMaze;
+
+type ModuleSide = 'north' | 'east' | 'south' | 'west';
+interface ModuleCell {
+  walls: { north: boolean; east: boolean; south: boolean; west: boolean };
+}
+interface MazeModule {
+  id: string;
+  width: number;
+  height: number;
+  cells: readonly (readonly (ModuleCell | null)[])[];
+  ports: readonly { id: string; side: ModuleSide; offset: number; type: string }[];
+  anchors: readonly { id: string; kind: string; x: number; y: number }[];
+}
+interface ModulePlacement { x: number; y: number; module: MazeModule }
+```
+
+Supply exactly one module per macro cell. Every module has the same positive, safe-integer
+rectangular footprint. `cells[y][x]` is either a traversable tile with four wall booleans or `null`
+for solid space. All local walls must be reciprocal, every module boundary initially sealed, and
+all traversable tiles within each module connected. A port names a candidate boundary tile:
+`offset` is local x on north/south and local y on east/west. It must land on a traversable tile.
+Multiple offsets model a wider opening; duplicate IDs or side/offset pairs are invalid.
+
+The macro `cells.walls` are the adjacency authority; `passages`, `center`, `exits` and cell flags
+do not select openings. Authored macro cycles are supported. Interior macro walls must be
+reciprocal. Every open macro side requires a nonempty port set; an interior edge must have
+exactly the same offsets and types on its opposite side. The composer opens those tile walls.
+Candidate ports on closed macro sides remain sealed. Open perimeter sides become exterior ports;
+no other module boundary opens. There is no automatic carving, content choice, repair or rotation.
+
+```ts
+interface ModuleProvenance {
+  moduleId: string;
+  macro: { x: number; y: number };
+  local: { x: number; y: number };
+}
+interface ComposedCell extends ModuleCell, ModuleProvenance { x: number; y: number }
+interface ComposedAnchor extends ModuleProvenance {
+  id: string; kind: string; x: number; y: number;
+}
+interface ComposedPort extends ModuleProvenance {
+  id: string; side: ModuleSide; offset: number; type: string; x: number; y: number;
+  status: 'sealed' | 'joined' | 'exit';
+}
+interface ComposedMaze {
+  width: number; height: number;
+  cells: (ComposedCell | null)[][];
+  modules: { moduleId: string; macro: { x: number; y: number }; origin: { x: number; y: number } }[];
+  anchors: ComposedAnchor[];
+  ports: ComposedPort[];
+  joins: {
+    from: { macro: { x: number; y: number }; portId: string };
+    to: { macro: { x: number; y: number }; portId: string };
+    type: string;
+  }[];
+  reachableCells: number;
+}
+```
+
+Origins are `(macro.x * module.width, macro.y * module.height)`; x/y in cells, anchors and ports
+are expanded tile coordinates. Provenance includes the original local coordinates. Reusing a
+module ID or local anchor ID across placements is supported: scope identities by macro coordinates.
+An anchor needs a nonempty ID/kind and must be on a traversable tile; IDs are unique within its
+module. Multiple differently named anchors may share a tile.
+
+The result is deliberately distinct from `MazeLayout`: solid mask tiles are not navigable. Do not
+cast it to `MazeLayout` or pass it to `buildGeometry`, `buildCurvedWalls` or `assertSolvable`.
+Consumers create their own rendering/navigation adapters over non-null cells and choose gameplay
+entry/goal anchors. `reachableCells` counts all non-null tiles and equals the number proven reachable
+by tile-level BFS after stitching; every anchor and port endpoint is therefore reachable. It does
+not prove a consumer's gated objectives or progression rules.
+
+Composition draws no randomness, changes no inputs and returns independent data. Output placements
+are row-major, anchors use code-unit ID order within each placement, ports use north/east/south/west
+then offset, and joins use row-major placement then east/south. Reordering input arrays does not
+change output. Invalid masks, missing/overlapping placements, mismatched footprints or ports,
+unsealed boundaries and disconnected modules/grids throw an `Error` prefixed `composeMazeModules:`.
+
 ## Geometry
 
 ### `MazeConfig` and `DEFAULT_CONFIG`

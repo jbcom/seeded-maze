@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-10-14: Explicit authored modules compose over macro wall topology
+
+**Decision.** Add `composeMazeModules` over explicit per-cell module placements with a fixed
+rectangular footprint, a null/open tile mask with reciprocal walls, typed boundary ports and generic
+local anchors. Return a separate masked `ComposedMaze` with placement-scoped provenance.
+
+**Why.** A coarse maze alone cannot preserve authored room shapes or internal walls. A generic
+composer can join those structures without choosing content, rendering, or changing saved-seed
+generation. A separate output type prevents existing all-traversable-grid helpers from inventing
+navigation through solid mask entries.
+
+**How.** Macro `cells.walls` determine seams; other layout metadata is not authoritative. Candidate
+ports begin sealed and open only for a requested macro connection or perimeter exit. Entire port
+sets must align by offset and type. Validate local connectivity before stamping and final tile
+connectivity after stitching, so even external cycles cannot conceal a disconnected authored module.
+Canonical ordering and copied outputs keep composition deterministic and input-independent.
+
+**Limits.** No module-selection solver, rotations, variable footprints, layered progression rules,
+curved rendering or content catalog. Consumers select modules and interpret anchors themselves.
+
 ## 2026-10-07: CommonJS ships alongside ESM
 
 **Decision.** The package ships native ESM (`dist/esm`) and CommonJS (`dist/cjs`), each with its own
