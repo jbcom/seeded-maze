@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/jbcom/seeded-maze/compare/v0.2.1...v0.3.0) (2026-10-14)
+
+
+### Features
+
+* compose authored modules over macro maze topology ([23b7296](https://github.com/jbcom/seeded-maze/commit/23b72960975b4c5449ad70e7881933be5043d426))
+* compose authored modules over macro maze topology ([265406a](https://github.com/jbcom/seeded-maze/commit/265406a5fae90d715eccfa4052af9cc21e56889d))
+
+
+### Bug Fixes
+
+* bound composition allocation before tile validation ([e8589ea](https://github.com/jbcom/seeded-maze/commit/e8589ea10d0594a472f8cf2ae8a0302adf68eeb0))
+
 ## [0.2.1](https://github.com/jbcom/seeded-maze/compare/v0.2.0...v0.2.1) (2026-10-07)
 
 

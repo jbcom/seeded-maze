@@ -1,6 +1,6 @@
 {
   "name": "seeded-maze",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Engine-agnostic, deterministic maze generation: seeded grid mazes, rail-node geometry, multi-layer topology with provable solvability, and curved-wall outlines.",
   "keywords": [
     "maze",
