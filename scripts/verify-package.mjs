@@ -34,6 +34,7 @@ const FUNCTIONS = [
   'assertSolvable',
   'buildCurvedWalls',
   'buildGeometry',
+  'composeMazeModules',
   'distanceToWall',
   'findDeadEnds',
   'generateLayeredMaze',
@@ -52,6 +53,7 @@ function exercise(api) {
     assert.equal(typeof api[name], 'function', `export ${name} is missing`);
   }
   assert.equal(typeof api.DEFAULT_CONFIG, 'object', 'export DEFAULT_CONFIG is missing');
+  assert.equal(api.MAX_COMPOSED_CELLS, 1_000_000, 'composition allocation limit is missing');
 
   const layout = api.generateMaze(9, 9, 'package-check');
   assert.deepEqual(
@@ -79,6 +81,26 @@ function exercise(api) {
   });
   assert.ok(curved.length > 0, 'no curved walls');
 
+  const module = {
+    id: 'tile',
+    width: 1,
+    height: 1,
+    cells: [[{ walls: { north: true, east: true, south: true, west: true } }]],
+    ports: ['north', 'east', 'south', 'west'].map((side) => ({
+      id: side,
+      side,
+      offset: 0,
+      type: 'path',
+    })),
+    anchors: [{ id: 'marker', kind: 'marker', x: 0, y: 0 }],
+  };
+  const composed = api.composeMazeModules(
+    layout,
+    layout.cells.flatMap((row) => row.map(({ x, y }) => ({ x, y, module }))),
+  );
+  assert.equal(composed.reachableCells, 81, 'module composition lost reachability');
+  assert.equal(composed.ports.filter((port) => port.status === 'exit').length, 4);
+
   return JSON.stringify({
     layout,
     nodes: [...geometry.railNodes.keys()],
@@ -86,6 +108,7 @@ function exercise(api) {
     layered,
     report,
     curved,
+    composed,
     dead: api.findDeadEnds(layout),
     distance: api.minDistanceToWalls({ x: 0, z: 0 }, curved),
   });
@@ -181,7 +204,11 @@ try {
       cwd: consumer,
       encoding: 'utf8',
     });
-  const sample = "JSON.stringify(m.generateMaze(9, 9, 'installed').passages)";
+  const sample = `JSON.stringify(m.composeMazeModules(m.generateMaze(3, 3, 'installed'),
+    m.generateMaze(3, 3, 'installed').cells.flatMap(row => row.map(({x,y}) => ({x,y,module:{
+      id:'tile',width:1,height:1,cells:[[{walls:{north:true,east:true,south:true,west:true}}]],
+      ports:['north','east','south','west'].map(side=>({id:side,side,offset:0,type:'path'})),anchors:[]
+    }})))))`;
   const esmInstalled = draw(
     'module',
     `import * as m from '${NAME}'; process.stdout.write(${sample});`,

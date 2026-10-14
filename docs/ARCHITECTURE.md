@@ -10,7 +10,8 @@ core ──────────> seedrandom
 geometry ──────> core (types only)
 curves ────────> core (types), geometry, seedrandom
 multiLayer ────> core, seedrandom
-index ─────────> re-exports all four
+composition ──> core (types only)
+index ─────────> re-exports all five
 ```
 
 - `core` carves a single maze and answers adjacency questions about it.
@@ -18,6 +19,8 @@ index ─────────> re-exports all four
   world space.
 - `curves` turns the same walls into smoothed polylines and measures distances to them.
 - `multiLayer` stacks mazes, joins them, and proves the result can be solved.
+- `composition` stamps explicitly selected authored modules, opens reciprocal typed ports and
+  validates connectivity both within modules and across the expanded masked tile grid.
 
 ## Invariants
 
@@ -25,7 +28,7 @@ index ─────────> re-exports all four
    depends only on `(width, height, seed)` and never on earlier calls. Layered mazes derive one seed per
    layer and one per connector band from the caller's seed, so adding a layer does not reshuffle the
    layers below it.
-2. **Every layout is a perfect maze.** Every cell is reachable from the centre, there are no loops, and
+2. **Every generated layout is a perfect maze.** Every cell is reachable from the centre, there are no loops, and
    the four perimeter exits are always on the boundary and never in a corner.
 3. **A connector band always has a stair.** The first connector between two adjacent layers is a
    two-way `stair`, so `assertSolvable` holds for any layer count.
@@ -34,6 +37,17 @@ index ─────────> re-exports all four
    smoothing and wobble cannot open a closed wall or close an open passage.
 5. **Plain data out.** No class instances, no rendering types. Everything is JSON-friendly except
    `MazeGeometry.railNodes`, which is a `Map`.
+6. **Composition preserves authored space.** Null mask tiles stay solid and internal walls are copied.
+   Only ports demanded by macro wall openings are joined. Candidate ports on closed sides stay sealed.
+   Reciprocal macro/local walls and exact port sets prevent accidental seams. Module and final tile
+   BFS reject islands, including islands that an external macro cycle could otherwise reconnect.
+7. **Composition is explicit and deterministic.** Fixed footprints give non-overlapping origins;
+   row-major placements and canonical anchor/port/join order remove input iteration order effects.
+   No random draws are added to existing generation contracts. Module, port and anchor provenance
+   remains scoped to each macro placement, so repeated authored descriptors remain distinguishable.
+8. **Allocation is bounded before deep validation.** The first descriptor's dimensions and rectangular
+   row shape are checked before the expanded safe-integer area. `MAX_COMPOSED_CELLS` limits the entire
+   output footprint, including solid entries, to 1,000,000 cells before tile scanning or allocation.
 
 ## Generation
 
@@ -59,3 +73,6 @@ synchronous; for very large mazes run them in a worker.
 - Square cells on a rectangular grid; no hex, triangle or irregular topologies.
 - One entrance (the centre) and four exits per layer. Moving the entrance is a caller concern.
 - Geometry is described, not drawn. Turning boxes and polylines into meshes belongs to the renderer.
+- Composition supports fixed rectangular footprints without rotation, variable-sized room placement,
+  content selection or a constraint solver. Its masked output is not a `MazeLayout`; consumers choose
+  their own gameplay anchors and adapt traversable cells to their renderer or navigation system.
